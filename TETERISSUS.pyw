@@ -4,7 +4,7 @@ pg.init()
 
 scale = 26.1
 fancyblocks = True
-move_interval = 2
+move_interval = 1.5
 
 boardsize = (10,20)
 displaysize = (scale*(boardsize[0]+6),scale*(boardsize[1]))
@@ -26,7 +26,7 @@ blocktemplates = {
         [[1, 2], [1, 1], [1, 0], [1, 3]]
         ],
     "J": [    
-        [[1, 2], [3, 1], [2, 2], [3, 2]],
+        [[3, 1], [3, 2], [1, 2], [2, 2]],
         [[2, 1], [2, 3], [3, 3], [2, 2]],
         [[1, 2], [2, 2], [3, 2], [1, 3]],
         [[2, 1], [1, 1], [2, 3], [2, 2]]
