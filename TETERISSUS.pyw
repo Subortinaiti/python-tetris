@@ -4,6 +4,7 @@ pg.init()
 
 scale = 26.1
 fancyblocks = True
+record_timelapse = "timelapse.json"
 move_interval = 1.5
 
 boardsize = (10,20)
@@ -11,10 +12,10 @@ displaysize = (scale*(boardsize[0]+6),scale*(boardsize[1]))
 
 blocktemplates = {
     "L": [
-        [[0, 1], [0, 2], [2, 1], [1, 1]],
-        [[1, 2], [0, 0], [1, 0], [1, 1]],
-        [[0, 1], [2, 1], [1, 1], [2, 0]],
-        [[1, 2], [2, 2], [1, 0], [1, 1]]
+        [[2, 3], [1, 1], [2, 1], [2, 2]],
+        [[1, 2], [2, 2], [3, 1], [3, 2]],
+        [[2, 3], [3, 3], [2, 1], [2, 2]],
+        [[1, 2], [2, 2], [3, 2], [1, 3]]
         ],
     "O": [
         [[1, 1], [1, 2], [2, 1], [2, 2]]
@@ -26,10 +27,10 @@ blocktemplates = {
         [[1, 2], [1, 1], [1, 0], [1, 3]]
         ],
     "J": [    
-        [[3, 1], [3, 2], [1, 2], [2, 2]],
-        [[2, 1], [2, 3], [3, 3], [2, 2]],
-        [[1, 2], [2, 2], [3, 2], [1, 3]],
-        [[2, 1], [1, 1], [2, 3], [2, 2]]
+        [[2, 3], [2, 1], [2, 2], [3, 1]],
+        [[1, 2], [3, 3], [2, 2], [3, 2]],
+        [[2, 3], [2, 1], [2, 2], [1, 3]],
+        [[1, 2], [1, 1], [2, 2], [3, 2]]
         ],
 
     "T": [
@@ -202,6 +203,11 @@ class Board:
             self.nextPiece = getRandomPiece()
             self.switched = False
             self.score += self.getFull()
+            self.score += self.getFull() # redundancy, I love when programs don't do what they are asked
+            self.score += self.getFull()
+            if record_timelapse is not None:
+                with open(record_timelapse,"a") as file:
+                    file.write(str(self.blocks)+"\n")
             
     def switchHold(self):
         if not self.switched:
@@ -230,9 +236,9 @@ class Board:
                     if self.blocks[i][0][1] < row:
                         self.blocks[i][0][1] += 1
 
-            
-        scores = [0,40,100,300,1200]
+        scores = [0, 40, 100, 300, 1200]
         return scores[len(full_rows)]
+
                     
 
     def checkGameOver(self):
@@ -248,7 +254,7 @@ def getRandomPiece():
     p = Piece(blocktemplates[r],blocktemplatecolors[r],4,-2)
     return p
 
-def drawHud(display,board,font):
+def drawHud(display,board,font,paused):
     pg.draw.line(display,(50,50,50),(10*scale,0),(10*scale,displaysize[1]),int(scale/5))
     display.blit(font.render(str(board.score),True,(255,255,255)),(11*scale,scale))
     display.blit(font.render(str("NEXT"),True,(255,255,255)),(12*scale,3*scale))
@@ -256,6 +262,8 @@ def drawHud(display,board,font):
     display.blit(font.render(str("HOLD"),True,(255,255,255)),(12*scale,8*scale))
     if board.holdPiece:
         board.holdPiece.draw_self_unanchored(display,10.5,9)
+    if paused:
+        display.blit(font.render(str("PAUSED"),True,(255,255,255)),(3.5*scale,5*scale))
     
 
 def main():
@@ -265,6 +273,7 @@ def main():
     cooldown = time.time()+move_interval
     font = pg.font.SysFont("Calibri",int(scale))
     dead = False
+    paused = False
     while not dead:
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -276,26 +285,29 @@ def main():
                     dead = True
                     pg.quit()
                     quit()
-                elif event.key == pg.K_UP:
+                elif event.key == pg.K_UP and not paused:
                     board.activePiece.rl(board)
-                elif event.key == pg.K_DOWN:
+                elif event.key == pg.K_DOWN and not paused:
                     board.activePiece.moveDown(board)
-                elif event.key == pg.K_LEFT:
+                elif event.key == pg.K_LEFT and not paused:
                     board.activePiece.moveLeft(board)
-                elif event.key == pg.K_RIGHT:
+                elif event.key == pg.K_RIGHT and not paused:
                     board.activePiece.moveRight(board)
-                elif event.key == pg.K_SPACE:
+                elif event.key == pg.K_SPACE and not paused:
                     board.activePiece.powerDrop(board)
                     cooldown = time.time()+move_interval
-                elif event.key == pg.K_c:
+                elif event.key == pg.K_c and not paused:
                     board.switchHold()
+                elif event.key == pg.K_p:
+                    paused = not paused
 
 
         if time.time() >= cooldown:
             cooldown = time.time()+move_interval
-            board.advance_pieces()
+            if not paused:
+                board.advance_pieces()
         display.fill((0,0,0))
-        drawHud(display,board,font)
+        drawHud(display,board,font,paused)
         board.draw_self(display)
         pg.display.flip()
         dead = board.checkGameOver()
